@@ -128,189 +128,164 @@ if ($canManageTc) {
     $cur_tc = tc_mask($cur_tc_plain);
 }
 
+
 $to_whom_is_list = in_array($cur_to_whom, $people, true);
+$chips = [
+    ['icon' => '#', 'label' => 'Kayıt', 'value' => $id],
+    ['icon' => '📅', 'label' => 'Giriş', 'value' => $cur_visit_date . ' ' . $cur_visit_time],
+];
 ?>
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kayıt Güncelle</title>
 <link rel="stylesheet" href="assets/style.css">
-<style>
-/* Sayfa taşıyıcı */
-.container { max-width: 960px; margin: 24px auto; padding: 0 12px; }
-
-/* Üst header: logo | başlık | geri */
-.header {
-  display:grid; grid-template-columns: 140px 1fr 140px; align-items:center; gap:12px; margin-bottom:18px;
-}
-.header .title { text-align:center; font-size:22px; font-weight:700; margin:0; }
-.logo-wrap { display:flex; align-items:center; }
-.logo-wrap img { max-height:48px; }
-
-/* Kart */
-.card {
-  background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:18px;
-  box-shadow: 0 8px 20px rgba(0,0,0,.04);
-}
-
-/* Grid form: masaüstünde 2 sütun, mobil tek */
-.form-grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
-.form-grid .full { grid-column: 1 / -1; }
-
-/* Alan stilleri (assets/style.css ile uyumlu çalışır) */
-label { display:block; font-weight:600; margin-bottom:6px; }
-input[type="text"], input[type="date"], input[type="time"], select {
-  width:100%; height:38px; border:1px solid #d1d5db; border-radius:10px; padding:0 10px; outline:0;
-}
-input[type="text"]::placeholder { color:#9aa3af; }
-
-.actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
-
-/* Küçük “Şimdi” çipleri */
-.btn-chip { padding:6px 10px; font-size:12px; border-radius:999px; }
-
-.meta { color:#64748b; font-size:13px; margin-top:8px; }
-
-@media (max-width: 820px){
-  .form-grid { grid-template-columns: 1fr; }
-  .header { grid-template-columns: 1fr; text-align:center; }
-  .header .title { order: 2; }
-}
-</style>
 </head>
 <body>
-<div class="container">
+<?php
+  render_topbar('index', [
+      'title'    => 'Kayıt Güncelle',
+      'subtitle' => 'Ziyaretçi: ' . $cur_full_name,
+      'chips'    => $chips,
+  ]);
+?>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo-wrap">
-      <img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
-    </div>
-    <h1 class="title">Kayıt Güncelle</h1>
-    <div style="text-align:right;">
-      <a class="button ghost" href="index.php">← Geri dön</a>
-    </div>
-  </div>
+<main class="app-container app-container--narrow">
+  <?php if($success): ?><div class="alert alert--success"><?=htmlspecialchars($success)?></div><?php endif; ?>
+  <?php if($error): ?><div class="alert alert--error"><?=htmlspecialchars($error)?></div><?php endif; ?>
 
-  <!-- Bildirimler -->
-  <?php if($success): ?><div class="success"><?=$success?></div><?php endif; ?>
-  <?php if($error): ?><div class="alert"><?=$error?></div><?php endif; ?>
-
-  <!-- Kart / Form -->
   <form method="post" class="card">
+    <div class="card-header">
+      <div>
+        <h1 class="card-title">Ziyaretçi Kaydını Düzenle</h1>
+        <p class="card-subtitle">Giriş, çıkış ve kişi bilgilerini güncelleyin.</p>
+      </div>
+      <a class="btn btn--ghost btn--small" href="index.php">← Kayıtlara dön</a>
+    </div>
+
     <input type="hidden" name="action" value="update">
 
-    <div class="form-grid">
-      <!-- Tarih / Saat -->
-      <div>
-        <label>Tarih</label>
-        <input type="date" name="visit_date" value="<?=htmlspecialchars($cur_visit_date, ENT_QUOTES, 'UTF-8')?>" required>
+    <div class="form-grid form-grid--two">
+      <div class="field">
+        <label for="visit_date">Tarih</label>
+        <input type="date" id="visit_date" name="visit_date" value="<?=htmlspecialchars($cur_visit_date, ENT_QUOTES, 'UTF-8')?>" required>
       </div>
 
-      <div>
-        <label>Giriş Saati</label>
-        <div style="display:flex; gap:8px;">
-          <input type="time" name="visit_time" id="visit_time" value="<?=htmlspecialchars($cur_visit_time, ENT_QUOTES, 'UTF-8')?>" required>
-          <button type="button" id="btnNowIn" class="button ghost btn-chip">Şimdi</button>
+      <div class="field">
+        <label for="visit_time">Giriş Saati</label>
+        <div class="input-group">
+          <input type="time" id="visit_time" name="visit_time" value="<?=htmlspecialchars($cur_visit_time, ENT_QUOTES, 'UTF-8')?>" required>
+          <button type="button" id="btnNowIn" class="btn btn--ghost btn--small">Şimdi</button>
         </div>
       </div>
 
-      <div>
-        <label>Çıkış Saati</label>
-        <div style="display:flex; gap:8px;">
-          <input type="time" name="exit_time" id="exit_time" value="<?=htmlspecialchars($cur_exit_time, ENT_QUOTES, 'UTF-8')?>">
-          <button type="button" id="btnNowOut" class="button ghost btn-chip">Şimdi</button>
+      <div class="field">
+        <label for="exit_time">Çıkış Saati</label>
+        <div class="input-group">
+          <input type="time" id="exit_time" name="exit_time" value="<?=htmlspecialchars($cur_exit_time, ENT_QUOTES, 'UTF-8')?>">
+          <button type="button" id="btnNowOut" class="btn btn--ghost btn--small">Şimdi</button>
         </div>
       </div>
 
-      <div>
-        <label>TC Kimlik No (opsiyonel)</label>
+      <div class="field">
+        <label for="tcno">TC Kimlik No (opsiyonel)</label>
         <?php if($canManageTc): ?>
-          <input type="text" name="tcno" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="11 hane">
+          <input type="text" id="tcno" name="tcno" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="11 hane">
         <?php else: ?>
-          <input type="text" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" placeholder="Yetkiniz yok" disabled>
+          <input type="text" id="tcno" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" placeholder="Yetkiniz yok" disabled>
           <div class="meta">TC bilgisi yalnızca yetkili kullanıcılar tarafından görüntülenebilir ve güncellenebilir.</div>
         <?php endif; ?>
       </div>
 
-      <!-- Ad Soyad -->
-      <div class="full">
-        <label>Adı Soyadı</label>
-        <input type="text" name="full_name" value="<?=htmlspecialchars($cur_full_name, ENT_QUOTES, 'UTF-8')?>" required>
+      <div class="field full">
+        <label for="full_name">Adı Soyadı</label>
+        <input type="text" id="full_name" name="full_name" value="<?=htmlspecialchars($cur_full_name, ENT_QUOTES, 'UTF-8')?>" required>
       </div>
 
-      <!-- Kime Geldi -->
-      <div>
-        <label>Kime Geldi</label>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <select name="to_whom" id="to_whom" required>
-            <option value="">Seçiniz</option>
-            <?php foreach($people as $p): ?>
-              <?php $personEsc = htmlspecialchars($p, ENT_QUOTES, 'UTF-8'); ?>
-              <option value="<?=$personEsc?>" <?=$to_whom_is_list && $cur_to_whom===$p ? 'selected':''?>><?=$personEsc?></option>
-            <?php endforeach; ?>
-            <option value="__OTHER__" <?=!$to_whom_is_list ? 'selected':''?>>Diğer</option>
-          </select>
-          <input type="text" id="to_whom_other" name="to_whom_other"
-                 placeholder="Ad Soyad (Diğer)"
-                 style="min-width:240px; <?= $to_whom_is_list ? 'display:none;' : '' ?>"
-                 value="<?= !$to_whom_is_list ? htmlspecialchars($cur_to_whom, ENT_QUOTES, 'UTF-8') : '' ?>">
-        </div>
+      <div class="field">
+        <label for="to_whom">Kime Geldi</label>
+        <select name="to_whom" id="to_whom">
+          <option value="">Seçiniz</option>
+          <?php foreach($people as $p): ?>
+            <?php $esc = htmlspecialchars($p, ENT_QUOTES, 'UTF-8'); ?>
+            <option value="<?=$esc?>" <?= $cur_to_whom === $p ? 'selected' : '' ?>><?=$esc?></option>
+          <?php endforeach; ?>
+          <option value="__OTHER__" <?= $to_whom_is_list ? '' : 'selected' ?>>Diğer</option>
+        </select>
+        <input type="text" name="to_whom_other" id="to_whom_other" value="<?= !$to_whom_is_list ? htmlspecialchars($cur_to_whom, ENT_QUOTES, 'UTF-8') : '' ?>" placeholder="Ad Soyad" class="stacked-input <?= $to_whom_is_list ? 'is-hidden' : '' ?>">
       </div>
 
-      <!-- Ziyaret Nedeni -->
-      <div>
-        <label>Ziyaret Nedeni</label>
-        <select name="reason" required>
+      <div class="field">
+        <label for="reason">Ziyaret Nedeni</label>
+        <select name="reason" id="reason" required>
           <option value="">Seçiniz</option>
           <?php foreach($reasons as $r): ?>
-            <?php $reasonEsc = htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?>
-            <option value="<?=$reasonEsc?>" <?=$cur_reason===$r ? 'selected':''?>><?=$reasonEsc?></option>
+            <?php $esc = htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?>
+            <option value="<?=$esc?>" <?= $cur_reason === $r ? 'selected' : '' ?>><?=$esc?></option>
           <?php endforeach; ?>
-          <?php if($cur_reason && !in_array($cur_reason, $reasons, true)): ?>
-            <?php $curReasonEsc = htmlspecialchars($cur_reason, ENT_QUOTES, 'UTF-8'); ?>
-            <option value="<?=$curReasonEsc?>" selected>(Listede yok) <?=$curReasonEsc?></option>
-          <?php endif; ?>
         </select>
       </div>
 
-      <!-- Not -->
-      <div class="full">
-        <label>Not (opsiyonel)</label>
-        <input type="text" name="note" value="<?=htmlspecialchars($cur_note ?? '', ENT_QUOTES, 'UTF-8')?>" placeholder="Kısa not">
+      <div class="field">
+        <label for="note">Not</label>
+        <input type="text" id="note" name="note" value="<?=htmlspecialchars((string)$cur_note, ENT_QUOTES, 'UTF-8')?>">
       </div>
     </div>
 
-    <div class="actions">
-      <a class="button ghost" href="index.php">İptal</a>
-      <button type="submit" class="button">Kaydı Güncelle</button>
+    <div class="form-actions">
+      <a class="btn btn--neutral" href="index.php">İptal</a>
+      <button type="submit" class="btn btn--primary">Kaydet</button>
     </div>
-    <div class="meta">ID: <?=htmlspecialchars((string)$id, ENT_QUOTES, 'UTF-8')?></div>
   </form>
-</div>
+</main>
 
 <script>
-// "Şimdi" butonları
-function nowHM(){ const n=new Date(); const p=x=>String(x).padStart(2,'0'); return p(n.getHours())+':'+p(n.getMinutes()); }
-document.getElementById('btnNowIn').addEventListener('click', ()=>{ document.getElementById('visit_time').value = nowHM(); });
-document.getElementById('btnNowOut').addEventListener('click', ()=>{ document.getElementById('exit_time').value  = nowHM(); });
+const visitDate = document.getElementById('visit_date');
+const visitTime = document.getElementById('visit_time');
+const exitTime  = document.getElementById('exit_time');
+const btnNowIn  = document.getElementById('btnNowIn');
+const btnNowOut = document.getElementById('btnNowOut');
+const toWhomSel = document.getElementById('to_whom');
+const toWhomOther = document.getElementById('to_whom_other');
 
-// "Diğer" seçimi
-const sel = document.getElementById('to_whom');
-const other = document.getElementById('to_whom_other');
-function toggleOther(){
-  if (sel.value === '__OTHER__') {
-    other.style.display = 'inline-block';
-    other.setAttribute('required','required');
-    other.focus();
-  } else {
-    other.style.display = 'none';
-    other.removeAttribute('required');
-    other.value = '';
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function setNowToFields(){
+  const now = new Date();
+  if (visitDate) {
+    visitDate.value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  }
+  if (visitTime) {
+    visitTime.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
   }
 }
-sel.addEventListener('change', toggleOther);
+
+function setNowToExit(){
+  const now = new Date();
+  if (exitTime) {
+    exitTime.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+}
+
+function toggleOther(){
+  if (!toWhomSel || !toWhomOther) return;
+  if (toWhomSel.value === '__OTHER__') {
+    toWhomOther.classList.remove('is-hidden');
+    toWhomOther.required = true;
+    toWhomOther.focus();
+  } else {
+    toWhomOther.classList.add('is-hidden');
+    toWhomOther.required = false;
+    toWhomOther.value = '';
+  }
+}
+
+btnNowIn?.addEventListener('click', setNowToFields);
+btnNowOut?.addEventListener('click', setNowToExit);
+document.addEventListener('DOMContentLoaded', toggleOther);
+toggleOther();
 </script>
 </body>
 </html>

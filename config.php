@@ -173,3 +173,142 @@ function validate_tc($tc) {
     $d11 = (array_sum(array_slice($d, 0, 10))) % 10;
     return $d[10] == $d11;
 }
+
+function app_nav_links(): array
+{
+    $links = [];
+
+    if (!empty($_SESSION['uid'])) {
+        $links[] = [
+            'id'    => 'index',
+            'href'  => 'index.php',
+            'label' => 'Ana Ekran',
+            'icon'  => '📝',
+        ];
+
+        if (($_SESSION['role'] ?? '') === 'admin') {
+            $links[] = [
+                'id'    => 'admin',
+                'href'  => 'admin.php',
+                'label' => 'Yönetici',
+                'icon'  => '🖥️',
+            ];
+            $links[] = [
+                'id'    => 'users',
+                'href'  => 'users.php',
+                'label' => 'Kullanıcılar',
+                'icon'  => '👤',
+            ];
+        }
+
+        $links[] = [
+            'id'    => 'people',
+            'href'  => 'people.php',
+            'label' => 'Kişiler',
+            'icon'  => '🧑',
+        ];
+        $links[] = [
+            'id'    => 'reasons',
+            'href'  => 'reasons.php',
+            'label' => 'Nedenler',
+            'icon'  => '❓',
+        ];
+        $links[] = [
+            'id'    => 'logout',
+            'href'  => 'logout.php',
+            'label' => 'Çıkış',
+            'icon'  => '🚪',
+        ];
+    } else {
+        $links[] = [
+            'id'    => 'login',
+            'href'  => 'login.php',
+            'label' => 'Giriş Yap',
+            'icon'  => '🔐',
+        ];
+    }
+
+    return $links;
+}
+
+function render_topbar(string $active = '', array $options = []): void
+{
+    $title    = $options['title']    ?? 'Ziyaretçi Kayıt Sistemi';
+    $subtitle = $options['subtitle'] ?? null;
+    $chips    = $options['chips']    ?? [];
+    $links    = $options['links']    ?? app_nav_links();
+    $logo     = $options['logo']     ?? 'assets/logo.png';
+    $showLogo = $options['showLogo'] ?? true;
+
+    echo '<header class="topbar">';
+    echo   '<div class="topbar__inner">';
+    echo     '<div class="brand">';
+    if ($showLogo) {
+        $logoEsc = htmlspecialchars($logo, ENT_QUOTES, 'UTF-8');
+        echo     '<img src="' . $logoEsc . '" alt="Logo" class="brand__logo" onerror="this.style.display=\'none\'">';
+    }
+    echo       '<div class="brand__text">';
+    echo         '<span class="brand__title">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</span>';
+    if ($subtitle) {
+        echo     '<span class="brand__subtitle">' . htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+    echo       '</div>';
+    echo     '</div>';
+
+    echo     '<div class="topbar__actions">';
+    if (!empty($chips)) {
+        echo   '<div class="topbar__chips">';
+        foreach ($chips as $chip) {
+            $icon  = $chip['icon']  ?? '';
+            $label = $chip['label'] ?? '';
+            $value = $chip['value'] ?? '';
+
+            echo '<span class="chip chip--glass">';
+            if ($icon !== '') {
+                echo '<span class="chip__icon">' . htmlspecialchars((string)$icon, ENT_QUOTES, 'UTF-8') . '</span>';
+            }
+            if ($label !== '') {
+                echo '<span class="chip__label">' . htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8') . '</span>';
+            }
+            if ($value !== '') {
+                echo '<span class="chip__value">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</span>';
+            }
+            echo '</span>';
+        }
+        echo   '</div>';
+    }
+
+    if (!empty($links)) {
+        echo   '<nav class="topnav">';
+        foreach ($links as $link) {
+            $href   = $link['href']  ?? '#';
+            $label  = $link['label'] ?? '';
+            if ($label === '') {
+                continue;
+            }
+            $id     = $link['id']    ?? $href;
+            $icon   = $link['icon']  ?? '';
+            $target = $link['target'] ?? '';
+
+            $classes = 'btn btn--ghost';
+            if ($id === $active) {
+                $classes .= ' btn--active';
+            }
+
+            echo '<a class="' . $classes . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"';
+            if ($target !== '') {
+                echo ' target="' . htmlspecialchars($target, ENT_QUOTES, 'UTF-8') . '"';
+            }
+            echo '>';
+            if ($icon !== '') {
+                echo '<span class="btn__icon">' . htmlspecialchars((string)$icon, ENT_QUOTES, 'UTF-8') . '</span>';
+            }
+            echo '<span class="btn__label">' . htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '</a>';
+        }
+        echo   '</nav>';
+    }
+    echo     '</div>';
+    echo   '</div>';
+    echo '</header>';
+}

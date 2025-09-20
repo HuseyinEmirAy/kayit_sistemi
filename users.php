@@ -93,129 +93,122 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 
 /* ---------------- Liste ---------------- */
 $users = $pdo->query("SELECT id, username, role FROM users ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+$totalUsers = count($users);
+
 ?>
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kullanıcılar</title>
-<style>
-:root{--bg:#f6f8fb;--card:#fff;--stroke:#e6ebf2;--muted:#64748b;--primary:#2563eb;--radius:12px}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto}
-.container{max-width:900px;margin:24px auto;padding:0 16px}
-h1{margin:0 0 14px 0;text-align:center;font-size:24px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-a.button,button.button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #dbe3ef;background:#fff;color:#0f172a;text-decoration:none;cursor:pointer;font-weight:700}
-.button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-.notice{padding:10px 14px;border-left:4px solid #22c55e;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:8px;margin:10px 0}
-.error{padding:10px 14px;border-left:4px solid #ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin:10px 0}
-.card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);padding:12px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
-thead th{background:#f8fafc;font-size:12px}
-.actions{white-space:nowrap;text-align:right}
-.badge{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;font-size:12px}
-.section-title{margin:18px 0 8px 0;font-weight:800}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input[type=text],input[type=password],select{width:100%;height:42px;border:1px solid #dbe3ef;border-radius:10px;padding:0 12px;background:#fff}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:720px){.form-row{grid-template-columns:1fr}}
-.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-.small{font-size:12px;color:var(--muted)}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kullanıcı Yönetimi</title>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    
-<div class="container">
-  <div class="top">
-    <h1>Kullanıcılar</h1>
-    <div></div>
-   
-  </div>
+<?php
+  render_topbar('users', [
+      'title'    => 'Kullanıcı Yönetimi',
+      'subtitle' => 'Yetkili hesapları yönetin, roller atayın ve parolaları güncelleyin.',
+      'chips'    => [
+          ['icon' => '👤', 'label' => 'Toplam Kullanıcı', 'value' => $totalUsers],
+      ],
+  ]);
+?>
 
-  <?php if($info): ?><div class="notice"><?=htmlspecialchars($info)?></div><?php endif; ?>
-  <?php if($error): ?><div class="error"><?=htmlspecialchars($error)?></div><?php endif; ?>
- <div class="top-actions"> 
-   <a class="button primary" href="index.php">📝 Ziyaretçi Kayıt Ekranı</a> 
-   <a class="button ghost" href="admin.php">🖥️ Admin Paneli</a> 
-   <a class="button ghost" href="people.php">🧑 Kişiler</a> 
-   <a class="button ghost" href="reasons.php">❓ Nedenler</a> 
-   <a class="button ghost" href="users.php">👤 Kullanıcılar</a> 
-   <a class="button ghost" href="logout.php">🚪 Çıkış</a> 
-   </div>
-  <!-- Liste -->
-  <div class="card">
-    <div class="section-title">Kayıtlı Kullanıcılar</div>
-    <table>
-      <thead><tr><th>ID</th><th>Kullanıcı Adı</th><th>Rol</th><th class="actions">İşlem</th></tr></thead>
-      <tbody>
-        <?php foreach($users as $u): ?>
-        <tr>
-          <td><?=$u['id']?></td>
-          <td><?=htmlspecialchars($u['username'])?></td>
-          <td><span class="badge"><?=htmlspecialchars($roles[$u['role']] ?? $u['role'])?></span></td>
-          <td class="actions">
-            <button class="button" onclick='fillForm(<?=json_encode($u,JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP)?>)'>Düzenle</button>
-            <?php if($u['id'] != ($_SESSION['uid'] ?? 0)): ?>
-            <form method="post" style="display:inline" onsubmit="return confirm('Silinsin mi?');">
-              <input type="hidden" name="op" value="delete">
-              <input type="hidden" name="id" value="<?=$u['id']?>">
-              <button type="submit" class="button" style="background:#ef4444;border-color:#ef4444;color:#fff;">Sil</button>
-            </form>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-        <?php if(!$users): ?><tr><td colspan="4">Kullanıcı yok</td></tr><?php endif; ?>
-      </tbody>
-    </table>
-  </div>
+<main class="app-container">
+  <?php if($info): ?><div class="alert alert--success"><?=htmlspecialchars($info)?></div><?php endif; ?>
+  <?php if($error): ?><div class="alert alert--error"><?=htmlspecialchars($error)?></div><?php endif; ?>
 
-  <!-- Tek Form: Yeni / Düzenle -->
-  <div class="card" style="margin-top:16px">
-    <div class="section-title" id="formTitle">Yeni Kullanıcı</div>
-    <form method="post" id="userForm">
+  <section class="card card--table">
+    <div class="card-header">
+      <div>
+        <h1 class="card-title">Kayıtlı Kullanıcılar</h1>
+        <p class="card-subtitle">Sisteme erişimi olan tüm kullanıcı hesapları ve roller.</p>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Kullanıcı Adı</th>
+            <th>Rol</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach($users as $u): ?>
+          <tr>
+            <td data-label="ID"><?=$u['id']?></td>
+            <td data-label="Kullanıcı Adı"><?=htmlspecialchars($u['username'])?></td>
+            <td data-label="Rol"><span class="badge"><?=htmlspecialchars($roles[$u['role']] ?? $u['role'])?></span></td>
+            <td class="actions" data-label="İşlem">
+              <button class="btn btn--ghost btn--small" onclick='fillForm(<?=json_encode($u,JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP)?>)'>Düzenle</button>
+              <?php if($u['id'] != ($_SESSION['uid'] ?? 0)): ?>
+              <form method="post" class="inline-form" onsubmit="return confirm('Silinsin mi?');">
+                <input type="hidden" name="op" value="delete">
+                <input type="hidden" name="id" value="<?=$u['id']?>">
+                <button type="submit" class="btn btn--danger btn--small">Sil</button>
+              </form>
+              <?php endif; ?>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+          <?php if(!$users): ?>
+          <tr>
+            <td colspan="4" data-label="Bilgi" class="table-empty">Kullanıcı yok</td>
+          </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title" id="formTitle">Yeni Kullanıcı</h2>
+        <p class="card-subtitle">Yeni bir hesap oluşturun veya mevcut bir hesabı güncelleyin.</p>
+      </div>
+    </div>
+    <form method="post" id="userForm" class="form-grid form-grid--two">
       <input type="hidden" name="id" id="f_id" value="0">
       <input type="hidden" name="op" id="f_op" value="">
-      <div class="form-row">
-        <div>
-          <label>Kullanıcı Adı</label>
-          <input type="text" name="username" id="f_username" placeholder="ornek.kullanici">
-          <div class="small" id="unameHint">Düzenleme modunda değiştirilemez.</div>
-        </div>
-        <div>
-          <label>Rol</label>
-          <select name="role" id="f_role">
-            <?php foreach($roles as $k=>$v): ?><option value="<?=$k?>"><?=$v?></option><?php endforeach; ?>
-          </select>
+      <div class="field">
+        <label for="f_username">Kullanıcı Adı</label>
+        <input type="text" name="username" id="f_username" placeholder="ornek.kullanici">
+        <div class="small-text" id="unameHint">Düzenleme modunda değiştirilemez.</div>
+      </div>
+      <div class="field">
+        <label for="f_role">Rol</label>
+        <select name="role" id="f_role">
+          <?php foreach($roles as $k=>$v): ?><option value="<?=$k?>"><?=$v?></option><?php endforeach; ?>
+        </select>
+      </div>
+      <div class="field">
+        <label id="pwdLabel" for="f_password">Parola</label>
+        <input type="password" name="password" id="f_password" placeholder="En az 12 karakter">
+        <div class="small-text" id="pwdHint">Yeni kullanıcıda zorunlu; düzenlemede boş bırakırsanız değişmez.</div>
+      </div>
+      <div class="field">
+        <label>Hızlı İşlem</label>
+        <div class="chip-group">
+          <button type="button" class="btn btn--ghost btn--small" id="btnGen">Parola Üret (Sunucu)</button>
+          <button type="button" class="btn btn--ghost btn--small" id="btnShow">Göster</button>
         </div>
       </div>
-      <div class="form-row">
-        <div>
-          <label id="pwdLabel">Parola</label>
-          <input type="password" name="password" id="f_password" placeholder="En az 12 karakter">
-          <div class="small" id="pwdHint">Yeni kullanıcıda zorunlu; düzenlemede boş bırakırsanız değişmez.</div>
-        </div>
-        <div>
-          <label>Hızlı İşlem</label>
-          <div class="form-actions" style="justify-content:flex-start;margin:0">
-            <button type="button" class="button" id="btnGen">Parola Üret (Sunucu)</button>
-            <button type="button" class="button" id="btnShow">Göster</button>
-          </div>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="button" onclick="resetForm()">Temizle → Yeni Kullanıcı</button>
-        <button type="submit" class="button primary" id="submitBtn">Kaydet</button>
+      <div class="form-actions field full">
+        <button type="button" class="btn btn--neutral" onclick="resetForm()">Temizle → Yeni Kullanıcı</button>
+        <button type="submit" class="btn btn--primary" id="submitBtn">Kaydet</button>
       </div>
     </form>
-  </div>
-</div>
+  </section>
+</main>
 
 <script>
 function resetForm(){
   document.getElementById('f_id').value = 0;
-  document.getElementById('f_op').value = ''; // create
+  document.getElementById('f_op').value = '';
   document.getElementById('f_username').value = '';
   document.getElementById('f_username').readOnly = false;
   document.getElementById('f_role').value = 'viewer';
@@ -242,23 +235,28 @@ function fillForm(u){
 }
 resetForm();
 
-// Sunucuda parola üret
-document.getElementById('btnGen').addEventListener('click', async ()=>{
-  const btn=this.event?.target || document.getElementById('btnGen');
-  btn.disabled=true; btn.textContent='Üretiliyor...';
-  try{
-    const r = await fetch('users.php?action=genpass'); const j=await r.json();
-    document.getElementById('f_password').value = j.password || '';
-  }catch(e){ alert('Parola üretilemedi'); }
-  btn.disabled=false; btn.textContent='Parola Üret (Sunucu)';
-});
-// Göster/Gizle
-document.getElementById('btnShow').addEventListener('click', ()=>{
-  const el=document.getElementById('f_password');
-  el.type = (el.type==='password') ? 'text' : 'password';
-});
+const btnGen=document.getElementById('btnGen');
+if(btnGen){
+  btnGen.addEventListener('click', async ()=>{
+    btnGen.disabled=true; btnGen.textContent='Üretiliyor...';
+    try{
+      const r = await fetch('users.php?action=genpass');
+      const j = await r.json();
+      document.getElementById('f_password').value = j.password || '';
+    }catch(e){ alert('Parola üretilemedi'); }
+    btnGen.disabled=false; btnGen.textContent='Parola Üret (Sunucu)';
+  });
+}
 
-// Tek formu POST etmeden önce op değerini ayarla
+const btnShow=document.getElementById('btnShow');
+if(btnShow){
+  btnShow.addEventListener('click', ()=>{
+    const el=document.getElementById('f_password');
+    el.type = (el.type==='password') ? 'text' : 'password';
+    btnShow.textContent = el.type==='password' ? 'Göster' : 'Gizle';
+  });
+}
+
 document.getElementById('userForm').addEventListener('submit', function(){
   const id = parseInt(document.getElementById('f_id').value,10)||0;
   document.getElementById('f_op').value = id===0 ? 'create' : 'update';

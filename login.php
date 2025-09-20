@@ -71,40 +71,45 @@ if ($_SERVER['REQUEST_METHOD']==='POST'){
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Görevli Girişi</title>
 <link rel="stylesheet" href="assets/style.css">
-<style>
-body{background:#f9fafb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-.container.small{max-width:360px;width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-.logo-wrap{text-align:center;margin-bottom:12px}
-.logo-wrap img{max-height:60px}
-h2{text-align:center;margin:12px 0 20px 0}
-form label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
-form input{width:100%;height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 10px;margin-bottom:14px}
-button{width:100%}
-</style>
 </head>
 <body>
-<div class="container small">
-  <div class="logo-wrap">
-    <img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
-  </div>
+<?php render_topbar('login', [
+    'title'    => 'Görevli Girişi',
+    'subtitle' => 'Yetkili kullanıcı giriş ekranı',
+    'links'    => [],
+]); ?>
 
-  <h2>Görevli Girişi</h2>
+<main class="app-container app-container--narrow app-container--center">
+  <section class="card auth-card">
+    <div class="card-header">
+      <div>
+        <h1 class="card-title">Hesabınıza giriş yapın</h1>
+        <p class="card-subtitle">Ziyaretçi kayıt paneline erişmek için kimlik doğrulaması yapın.</p>
+      </div>
+    </div>
 
-  <?php if($error): ?><div class="alert"><?=$error?></div><?php endif; ?>
+    <?php if($error): ?><div class="alert alert--error"><?=htmlspecialchars($error)?></div><?php endif; ?>
 
-  <form method="post">
-    <label>Kullanıcı Adı</label>
-    <input type="text" name="username" required>
+    <form method="post" class="stack">
+      <div class="field">
+        <label for="username">Kullanıcı Adı</label>
+        <input type="text" id="username" name="username" required>
+      </div>
 
-    <label>Şifre</label>
-    <input type="password" name="password" required>
+      <div class="field">
+        <label for="password">Şifre</label>
+        <input type="password" id="password" name="password" required>
+      </div>
 
-    <button type="submit" class="button">Giriş</button>
-  </form>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary btn--block">Giriş Yap</button>
+      </div>
+    </form>
 
-  <div style="text-align:center;margin-top:10px;">
-    <a class="button ghost" href="index.php">Ziyaretçi Ekranına Dön</a>
-  </div>
-</div>
+    <div class="form-actions form-actions--center">
+      <a class="btn btn--ghost" href="index.php">Ziyaretçi Ekranına Dön</a>
+    </div>
+  </section>
+</main>
 </body>
 </html>
