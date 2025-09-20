@@ -3,7 +3,7 @@ require __DIR__.'/config.php';
 
 /* --------- ZORUNLU GİRİŞ (AUTH GUARD) --------- */
 if (empty($_SESSION['uid'])) {
-    header('Location: login.php?next=index.php');
+    header('Location: login.php?next=' . urlencode('index.php'));
     exit;
 }
 
@@ -198,11 +198,12 @@ ul li{padding:10px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-conten
           <div class="inline">
             <select name="to_whom" id="to_whom" required>
               <option value="">Seçiniz</option>
-              <?php foreach($people as $p): ?>
-                <option value="<?=$p?>"><?=$p?></option>
-              <?php endforeach; ?>
-              <option value="__OTHER__">Diğer</option>
-            </select>
+            <?php foreach($people as $p): ?>
+              <?php $personEsc = htmlspecialchars($p, ENT_QUOTES, 'UTF-8'); ?>
+              <option value="<?=$personEsc?>"><?=$personEsc?></option>
+            <?php endforeach; ?>
+            <option value="__OTHER__">Diğer</option>
+          </select>
             <input type="text" id="to_whom_other" name="to_whom_other" placeholder="Ad Soyad (Diğer)" style="display:none; min-width:240px;">
           </div>
         </div>
@@ -211,7 +212,8 @@ ul li{padding:10px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-conten
           <select name="reason" required>
             <option value="">Seçiniz</option>
             <?php foreach($reasons as $r): ?>
-              <option value="<?=$r?>"><?=$r?></option>
+              <?php $reasonEsc = htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?>
+              <option value="<?=$reasonEsc?>"><?=$reasonEsc?></option>
             <?php endforeach; ?>
           </select>
         </div>
