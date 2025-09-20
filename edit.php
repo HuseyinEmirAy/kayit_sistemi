@@ -6,7 +6,20 @@ $error = '';
 
 // --- ID ---
 $id = (int)($_GET['id'] ?? 0);
+
+if (empty($_SESSION['uid'])) {
+    $target = 'edit.php';
+    if ($id > 0) {
+        $target .= '?' . http_build_query(['id' => $id]);
+    }
+    header('Location: login.php?next=' . urlencode($target));
+    exit;
+}
+
 if ($id <= 0) { die('Geçersiz ID'); }
+
+$role = $_SESSION['role'] ?? 'user';
+$canManageTc = ($role === 'admin');
 
 // --- Seçenek listeleri ---
 $people = [];
@@ -30,14 +43,19 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '') === 'update'
     $to_whom_other= trim($_POST['to_whom_other'] ?? '');
     $reason       = trim($_POST['reason'] ?? $rec['reason']);
     $note         = trim($_POST['note'] ?? $rec['note']);
-    $tcno         = preg_replace('/\D/','', $_POST['tcno'] ?? ''); // opsiyonel
+    $tc_action    = 'keep';
+    $tc_input     = null;
+    if ($canManageTc) {
+        $tc_input  = preg_replace('/\D/','', $_POST['tcno'] ?? '');
+        $tc_action = ($tc_input === '') ? 'clear' : 'set';
+    }
 
     $to_whom = ($to_whom_sel === '__OTHER__') ? $to_whom_other : $to_whom_sel;
 
     // Validasyon
     if (!$full_name || !$to_whom || !$reason) {
         $error = 'Lütfen zorunlu alanları doldurunuz.';
-    } elseif ($tcno && !validate_tc($tcno)) {
+    } elseif ($tc_action === 'set' && !validate_tc($tc_input)) {
         $error = 'TC Kimlik No geçersiz.';
     } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $visit_date)) {
         $error = 'Geçerli bir tarih giriniz (YYYY-AA-GG).';
@@ -47,9 +65,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '') === 'update'
         $error = 'Geçerli bir çıkış saati giriniz (SS:dd).';
     } else {
         // Aynı gün aynı TC ikinci giriş kontrolü (kendi kaydı hariç)
-        if ($tcno) {
+        if ($tc_action === 'set') {
             $chk = $pdo->prepare('SELECT 1 FROM visits WHERE visit_date=? AND tc_hash=? AND id<>? LIMIT 1');
-            $chk->execute([$visit_date, tc_hash($tcno), $id]);
+            $chk->execute([$visit_date, tc_hash($tc_input), $id]);
             if ($chk->fetch()){
                 $error = 'Bu TC ile aynı gün başka bir giriş kaydı var.';
             }
@@ -58,8 +76,16 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '') === 'update'
 
     if (!$error) {
         $exit_time = $exit_time_in ? ($exit_time_in . ':00') : null;
-        $tc_enc = $tcno ? tc_encrypt($tcno) : null;
-        $tc_hash= $tcno ? tc_hash($tcno)    : null;
+        if ($tc_action === 'set') {
+            $tc_enc  = tc_encrypt($tc_input);
+            $tc_hash = tc_hash($tc_input);
+        } elseif ($tc_action === 'clear') {
+            $tc_enc = null;
+            $tc_hash = null;
+        } else {
+            $tc_enc = $rec['tc_enc'];
+            $tc_hash = $rec['tc_hash'];
+        }
 
         $upd = $pdo->prepare("UPDATE visits SET
             visit_date=?, visit_time=?, exit_time=?, full_name=?, to_whom=?, reason=?, note=?, tc_enc=?, tc_hash=?
@@ -94,7 +120,13 @@ $cur_full_name  = $rec['full_name'];
 $cur_to_whom    = $rec['to_whom'];
 $cur_reason     = $rec['reason'];
 $cur_note       = $rec['note'];
-$cur_tc         = $rec['tc_enc'] ? tc_decrypt($rec['tc_enc']) : '';
+$cur_tc_plain   = $rec['tc_enc'] ? tc_decrypt($rec['tc_enc']) : '';
+$cur_tc         = '';
+if ($canManageTc) {
+    $cur_tc = $cur_tc_plain;
+} elseif ($cur_tc_plain !== '') {
+    $cur_tc = tc_mask($cur_tc_plain);
+}
 
 $to_whom_is_list = in_array($cur_to_whom, $people, true);
 ?>
@@ -173,13 +205,13 @@ input[type="text"]::placeholder { color:#9aa3af; }
       <!-- Tarih / Saat -->
       <div>
         <label>Tarih</label>
-        <input type="date" name="visit_date" value="<?=htmlspecialchars($cur_visit_date)?>" required>
+        <input type="date" name="visit_date" value="<?=htmlspecialchars($cur_visit_date, ENT_QUOTES, 'UTF-8')?>" required>
       </div>
 
       <div>
         <label>Giriş Saati</label>
         <div style="display:flex; gap:8px;">
-          <input type="time" name="visit_time" id="visit_time" value="<?=htmlspecialchars($cur_visit_time)?>" required>
+          <input type="time" name="visit_time" id="visit_time" value="<?=htmlspecialchars($cur_visit_time, ENT_QUOTES, 'UTF-8')?>" required>
           <button type="button" id="btnNowIn" class="button ghost btn-chip">Şimdi</button>
         </div>
       </div>
@@ -187,20 +219,25 @@ input[type="text"]::placeholder { color:#9aa3af; }
       <div>
         <label>Çıkış Saati</label>
         <div style="display:flex; gap:8px;">
-          <input type="time" name="exit_time" id="exit_time" value="<?=htmlspecialchars($cur_exit_time)?>">
+          <input type="time" name="exit_time" id="exit_time" value="<?=htmlspecialchars($cur_exit_time, ENT_QUOTES, 'UTF-8')?>">
           <button type="button" id="btnNowOut" class="button ghost btn-chip">Şimdi</button>
         </div>
       </div>
 
       <div>
         <label>TC Kimlik No (opsiyonel)</label>
-        <input type="text" name="tcno" value="<?=htmlspecialchars($cur_tc)?>" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="11 hane">
+        <?php if($canManageTc): ?>
+          <input type="text" name="tcno" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="11 hane">
+        <?php else: ?>
+          <input type="text" value="<?=htmlspecialchars($cur_tc, ENT_QUOTES, 'UTF-8')?>" placeholder="Yetkiniz yok" disabled>
+          <div class="meta">TC bilgisi yalnızca yetkili kullanıcılar tarafından görüntülenebilir ve güncellenebilir.</div>
+        <?php endif; ?>
       </div>
 
       <!-- Ad Soyad -->
       <div class="full">
         <label>Adı Soyadı</label>
-        <input type="text" name="full_name" value="<?=htmlspecialchars($cur_full_name)?>" required>
+        <input type="text" name="full_name" value="<?=htmlspecialchars($cur_full_name, ENT_QUOTES, 'UTF-8')?>" required>
       </div>
 
       <!-- Kime Geldi -->
@@ -210,14 +247,15 @@ input[type="text"]::placeholder { color:#9aa3af; }
           <select name="to_whom" id="to_whom" required>
             <option value="">Seçiniz</option>
             <?php foreach($people as $p): ?>
-              <option value="<?=$p?>" <?=$to_whom_is_list && $cur_to_whom===$p ? 'selected':''?>><?=$p?></option>
+              <?php $personEsc = htmlspecialchars($p, ENT_QUOTES, 'UTF-8'); ?>
+              <option value="<?=$personEsc?>" <?=$to_whom_is_list && $cur_to_whom===$p ? 'selected':''?>><?=$personEsc?></option>
             <?php endforeach; ?>
             <option value="__OTHER__" <?=!$to_whom_is_list ? 'selected':''?>>Diğer</option>
           </select>
           <input type="text" id="to_whom_other" name="to_whom_other"
                  placeholder="Ad Soyad (Diğer)"
                  style="min-width:240px; <?= $to_whom_is_list ? 'display:none;' : '' ?>"
-                 value="<?= !$to_whom_is_list ? htmlspecialchars($cur_to_whom) : '' ?>">
+                 value="<?= !$to_whom_is_list ? htmlspecialchars($cur_to_whom, ENT_QUOTES, 'UTF-8') : '' ?>">
         </div>
       </div>
 
@@ -227,10 +265,12 @@ input[type="text"]::placeholder { color:#9aa3af; }
         <select name="reason" required>
           <option value="">Seçiniz</option>
           <?php foreach($reasons as $r): ?>
-            <option value="<?=$r?>" <?=$cur_reason===$r ? 'selected':''?>><?=$r?></option>
+            <?php $reasonEsc = htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?>
+            <option value="<?=$reasonEsc?>" <?=$cur_reason===$r ? 'selected':''?>><?=$reasonEsc?></option>
           <?php endforeach; ?>
           <?php if($cur_reason && !in_array($cur_reason, $reasons, true)): ?>
-            <option value="<?=$cur_reason?>" selected>(Listede yok) <?=$cur_reason?></option>
+            <?php $curReasonEsc = htmlspecialchars($cur_reason, ENT_QUOTES, 'UTF-8'); ?>
+            <option value="<?=$curReasonEsc?>" selected>(Listede yok) <?=$curReasonEsc?></option>
           <?php endif; ?>
         </select>
       </div>
@@ -238,7 +278,7 @@ input[type="text"]::placeholder { color:#9aa3af; }
       <!-- Not -->
       <div class="full">
         <label>Not (opsiyonel)</label>
-        <input type="text" name="note" value="<?=htmlspecialchars($cur_note ?? '')?>" placeholder="Kısa not">
+        <input type="text" name="note" value="<?=htmlspecialchars($cur_note ?? '', ENT_QUOTES, 'UTF-8')?>" placeholder="Kısa not">
       </div>
     </div>
 
@@ -246,7 +286,7 @@ input[type="text"]::placeholder { color:#9aa3af; }
       <a class="button ghost" href="index.php">İptal</a>
       <button type="submit" class="button">Kaydı Güncelle</button>
     </div>
-    <div class="meta">ID: <?=$id?></div>
+    <div class="meta">ID: <?=htmlspecialchars((string)$id, ENT_QUOTES, 'UTF-8')?></div>
   </form>
 </div>
 

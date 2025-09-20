@@ -172,12 +172,12 @@ td.actions{text-align:right;white-space:nowrap}
         <td>
           <form method="post" style="display:inline">
             <input type="hidden" name="action" value="toggle">
-            <input type="hidden" name="id" value="<?=$r['id']?>">
+            <input type="hidden" name="id" value="<?=htmlspecialchars((string)$r['id'], ENT_QUOTES, 'UTF-8')?>">
             <button type="submit" class="button"><?= $r['active'] ? 'Pasifleştir' : 'Aktifleştir' ?></button>
           </form>
           <form method="post" style="display:inline" onsubmit="return confirm('Silinsin mi?')">
             <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="id" value="<?=$r['id']?>">
+            <input type="hidden" name="id" value="<?=htmlspecialchars((string)$r['id'], ENT_QUOTES, 'UTF-8')?>">
             <button type="submit" class="button ghost">Sil</button>
           </form>
         </td>
